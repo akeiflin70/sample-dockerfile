@@ -27,4 +27,4 @@ else
 fi
 cd /bing-rewards/BingRewards
 "$@"
-tail -f /bing-rewards/BingRewards/logs/cronBing.log
+#tail -f /bing-rewards/BingRewards/logs/cronBing.log
