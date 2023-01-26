@@ -1,24 +1,36 @@
-# This is a standard Dockerfile for building a Go app.
-# It is a multi-stage build: the first stage compiles the Go source into a binary, and
-#   the second stage copies only the binary into an alpine base.
+FROM python:3.9.13-slim
 
-# -- Stage 1 -- #
-# Compile the app.
-FROM golang:1.12-alpine as builder
-WORKDIR /app
-# The build context is set to the directory where the repo is cloned.
-# This will copy all files in the repo to /app inside the container.
-# If your app requires the build context to be set to a subdirectory inside the repo, you
-#   can use the source_dir app spec option, see: https://www.digitalocean.com/docs/app-platform/references/app-specification-reference/
-COPY . .
-RUN go build -mod=vendor -o bin/hello
 
-# -- Stage 2 -- #
-# Create the final environment with the compiled binary.
-FROM alpine
-# Install any required dependencies.
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-# Copy the binary from the builder stage and set it as the default command.
-COPY --from=builder /app/bin/hello /usr/local/bin/
-CMD ["hello"]
+COPY .git/ /bing-rewards/.git/
+COPY /BingRewards /bing-rewards/BingRewards
+COPY bing.cron /etc/cron.d/bing.cron
+COPY entry.sh script.sh update.sh /bing-rewards/
+RUN set -ex \
+    && apt-get update --no-install-recommends -y \
+    && apt-get install --no-install-recommends -y  \
+    chromium \ 
+    git \ 
+    vim \
+    nano \
+    tzdata \
+    cron \
+    htop \
+    && rm -rf /var/lib/apt/lists/* \
+    && touch /var/log/cron.log \
+    && adduser --system nonroot \
+    && chown -R nonroot /bing-rewards \
+    && chmod 0777 /etc/cron.d/bing.cron \
+    && chmod +x /bing-rewards/entry.sh \
+    && chmod +x /bing-rewards/update.sh \
+    && chmod u+s /usr/sbin/cron 	
+# Set display port as an environment variable
+ENV DISPLAY=:99
+ENV PATH="/home/nonroot/.local/bin:${PATH}"
+ENV UPDATE="0 0 */1 * *"
+ENV SCH="0 */8 * * *"
+ENV TZ="America/New_York"
+SHELL ["/bin/bash", "-ec"]
+USER nonroot
+WORKDIR /bing-rewards/BingRewards
+ENTRYPOINT ["/bin/bash", "/bing-rewards/entry.sh"]
+
