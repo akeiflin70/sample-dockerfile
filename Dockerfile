@@ -14,7 +14,6 @@ RUN set -ex \
     nano \
     tzdata \
     cron \
-    htop \
     && rm -rf /var/lib/apt/lists/* \
     && touch /var/log/cron.log \
     && adduser --system nonroot \
